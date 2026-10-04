@@ -123,7 +123,7 @@ export function SshLogs({ api }) {
   const pruneEmpty = async () => {
     const empty = (logs ?? []).filter((log) => log.bytes === 0);
     if (empty.length === 0) return;
-    if (!globalThis.confirm?.(`删除 ${empty.length} 条 0 字节的会话日志？`)) return;
+    if (!globalThis.confirm?.(`Delete ${empty.length} empty (0-byte) session logs?`)) return;
     setBusy(true);
     setError(null);
     try {
@@ -137,7 +137,7 @@ export function SshLogs({ api }) {
   };
 
   const removeLog = async (log) => {
-    if (!globalThis.confirm?.(`删除会话日志 ${log.sessionId}？此操作不可恢复。`)) return;
+    if (!globalThis.confirm?.(`Delete session log ${log.sessionId}? This cannot be undone.`)) return;
     setBusy(true);
     setError(null);
     try {
@@ -158,17 +158,17 @@ export function SshLogs({ api }) {
   return (
     <div style={styles.root}>
       <div style={styles.toolbar}>
-        <span style={styles.title}>会话日志</span>
-        <button onClick={refresh} disabled={busy} style={styles.btn} title="刷新列表">↻</button>
+        <span style={styles.title}>Session logs</span>
+        <button onClick={refresh} disabled={busy} style={styles.btn} title="Refresh list">↻</button>
         {(logs ?? []).some((log) => log.bytes === 0) && (
           <button
             onClick={pruneEmpty}
             disabled={busy}
             style={styles.btn}
-            title="删除所有 0 字节的会话日志"
-          >清理空日志</button>
+            title="Delete all empty (0-byte) session logs"
+          >Clean up empty logs</button>
         )}
-        {!enabled && <span style={styles.hint}>录制已关闭（config.sessionLogEnabled = false）</span>}
+        {!enabled && <span style={styles.hint}>Recording is off (config.sessionLogEnabled = false)</span>}
       </div>
 
       {error && <div style={styles.error}>{error}</div>}
@@ -176,9 +176,9 @@ export function SshLogs({ api }) {
       <div style={styles.body}>
         <div style={styles.list}>
           {logs === null ? (
-            <div style={styles.empty}>加载中…</div>
+            <div style={styles.empty}>Loading…</div>
           ) : logs.length === 0 ? (
-            <div style={styles.empty}>还没有录制的会话。打开 SSH 终端后会自动记录。</div>
+            <div style={styles.empty}>No recorded sessions yet. They are captured automatically once you open an SSH terminal.</div>
           ) : (
             logs.map((log) => (
               <div
@@ -188,17 +188,17 @@ export function SshLogs({ api }) {
                 title={log.sessionId}
               >
                 <div style={styles.rowTitle}>
-                  <span>{[log.name, log.host].filter(Boolean).join(" @ ") || "未知主机"}</span>
-                  <span style={styles.rowMeta}>{formatBytes(log.bytes)}{log.truncated ? " · 已截断" : ""}</span>
+                  <span>{[log.name, log.host].filter(Boolean).join(" @ ") || "Unknown host"}</span>
+                  <span style={styles.rowMeta}>{formatBytes(log.bytes)}{log.truncated ? " · truncated" : ""}</span>
                 </div>
                 <div style={styles.rowSub}>
                   <span>{formatWhen(log.startedAt)}</span>
-                  <span>{log.endedAt === null ? "录制中" : (log.exitCode === null ? "已结束" : `退出码 ${log.exitCode}`)}</span>
+                  <span>{log.endedAt === null ? "Recording" : (log.exitCode === null ? "Finished" : `Exit code ${log.exitCode}`)}</span>
                   <button
                     onClick={(event) => { event.stopPropagation(); removeLog(log); }}
                     disabled={busy}
                     style={styles.rowDelete}
-                    title={`删除 ${log.sessionId}`}
+                    title={`Delete ${log.sessionId}`}
                   >×</button>
                 </div>
               </div>
@@ -208,7 +208,7 @@ export function SshLogs({ api }) {
 
         <div style={styles.viewer}>
           {selected === null ? (
-            <div style={styles.empty}>选择左侧一条会话查看内容</div>
+            <div style={styles.empty}>Select a session on the left to view it</div>
           ) : (
             <>
               <div style={styles.viewerBar}>
@@ -217,35 +217,35 @@ export function SshLogs({ api }) {
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   onKeyDown={(event) => event.key === "Enter" && search()}
-                  placeholder="搜索…"
+                  placeholder="Search…"
                   style={styles.searchInput}
                 />
-                <button onClick={search} disabled={busy || query.trim() === ""} style={styles.btn}>搜索</button>
-                <button onClick={download} disabled={busy} style={styles.btn}>下载</button>
+                <button onClick={search} disabled={busy || query.trim() === ""} style={styles.btn}>Search</button>
+                <button onClick={download} disabled={busy} style={styles.btn}>Download</button>
               </div>
               {hits !== null && (
                 <div style={styles.hits}>
                   {hits.length === 0 ? (
-                    <div style={styles.hint}>没有匹配行</div>
+                    <div style={styles.hint}>No matching lines</div>
                   ) : hits.map((hit, index) => (
                     <button
                       key={`${hit.offset}-${index}`}
                       onClick={() => openLog(selected, { offset: hit.offset })}
                       style={styles.hitRow}
-                      title={`跳到 offset ${hit.offset}`}
+                      title={`Jump to offset ${hit.offset}`}
                     >{hit.line}</button>
                   ))}
                 </div>
               )}
-              <pre style={styles.pre}>{content}{content === "" ? "（空）" : ""}</pre>
+              <pre style={styles.pre}>{content}{content === "" ? "(empty)" : ""}</pre>
               <div style={styles.viewerFoot}>
-                <span style={styles.hint}>{formatBytes(nextOffset)} / {formatBytes(size)}{eof ? " · 已到末尾" : ""}</span>
+                <span style={styles.hint}>{formatBytes(nextOffset)} / {formatBytes(size)}{eof ? " · end reached" : ""}</span>
                 {!eof && (
                   <button
                     onClick={() => openLog(selected, { offset: nextOffset, append: true })}
                     disabled={busy}
                     style={styles.btn}
-                  >加载更多</button>
+                  >Load more</button>
                 )}
               </div>
             </>

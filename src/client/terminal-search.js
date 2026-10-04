@@ -37,7 +37,7 @@ export function searchResultLabel(results, query) {
   const count = Number(results?.resultCount ?? 0);
   const index = Number(results?.resultIndex ?? -1);
   if (String(query ?? "").trim() === "") return "";
-  if (count <= 0) return "无匹配";
+  if (count <= 0) return "no match";
   const position = index >= 0 && index < count ? index + 1 : 1;
   return `${position}/${count}`;
 }

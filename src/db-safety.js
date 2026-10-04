@@ -36,7 +36,7 @@ export function assessSqlStatement(sql) {
   if (typeof sql !== "string" || sql.trim() === "") return { blocked: false };
   for (const verb of statementVerbs(sql)) {
     if (DESTRUCTIVE_VERBS.has(verb)) {
-      return { blocked: true, reason: `${verb} 不可恢复或会停库`, verb };
+      return { blocked: true, reason: `${verb} is irreversible or takes the database down`, verb };
     }
   }
   return { blocked: false };
@@ -167,13 +167,13 @@ export function assessReadOnlySql(sql) {
   for (const stmt of statements) {
     const verb = stmt.tokens[0].word;
     if (!READONLY_VERBS.has(verb)) {
-      return { ok: false, reason: `只读查询不允许以 “${verb}” 开头的语句（仅允许 SELECT/SHOW/DESCRIBE/EXPLAIN/WITH）`, verbs };
+      return { ok: false, reason: `A read-only query may not start with “${verb}” (only SELECT/SHOW/DESCRIBE/EXPLAIN/WITH are allowed)`, verbs };
     }
     for (const token of stmt.tokens) {
       if (token.word === "CREATE" && verb === "SHOW") continue; // SHOW CREATE TABLE
       if (token.word === "REPLACE" && token.isCall) continue;   // REPLACE(str, a, b)
       if (WRITE_KEYWORDS.has(token.word)) {
-        return { ok: false, reason: `只读查询中不允许出现 ${token.word}；如需变更请走 db_execute（高危会转人工确认）或数据库面板`, verbs };
+        return { ok: false, reason: `A read-only query may not contain ${token.word}; to make changes use db_execute (high-risk ones go to human confirmation) or the database panel`, verbs };
       }
     }
   }

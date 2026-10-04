@@ -51,7 +51,7 @@ function identLineEnd(buf) {
 /** Assemble one conformant identification line: protocol, software, comments. */
 const buildLine = (protocol, software, trailing) => "SSH-" + protocol + "-" + software + trailing;
 
-const malformed = (text) => "对端横幅不规范（原文 " + JSON.stringify(text) + "）";
+const malformed = (text) => "The peer's banner is malformed (original: " + JSON.stringify(text) + ")";
 
 /**
  * Decide what to do with one identification line. Pure — the whole interop
@@ -65,7 +65,7 @@ export function planBannerRepair(line) {
   const text = String(line).replace(/[\r\n]+$/, "");
   const match = text.match(IDENT_RE);
   if (match === null) {
-    return { action: "reject", reason: "横幅没有 SSH-<协议版本>-<软件版本> 结构" };
+    return { action: "reject", reason: "The banner does not have the SSH-<protocol-version>-<software-version> structure" };
   }
   const [, major, minor, rest] = match;
   // Software token first, comments after it. Trailing whitespace and NULs
@@ -78,7 +78,7 @@ export function planBannerRepair(line) {
   if (major === "1" && minor === "99") {
     // 1.99 is the "I speak both" spelling of 2.0, which ssh2 accepts natively,
     // so the only thing that can be wrong here is a missing software token.
-    if (software === "") return { action: "reject", reason: "SSH-1.99 之后缺少软件版本" };
+    if (software === "") return { action: "reject", reason: "Missing software version after SSH-1.99" };
     const rebuilt = buildLine(PROTOCOL_199, software, trailing);
     return {
       action: rebuilt === text ? "keep" : "rewrite",
@@ -89,9 +89,9 @@ export function planBannerRepair(line) {
   if (major !== "2") {
     // SSH-1 is a different wire protocol, not a spelling variant. Pretending it
     // is 2.0 would only move the failure somewhere more confusing.
-    return { action: "reject", reason: "对端只提供 SSH-" + major + "." + minor + "，ssh2 不支持 SSH-1 协议" };
+    return { action: "reject", reason: "The peer only offers SSH-" + major + "." + minor + "; ssh2 does not support the SSH-1 protocol" };
   }
-  if (software === "") return { action: "reject", reason: "SSH-2.0 之后缺少软件版本" };
+  if (software === "") return { action: "reject", reason: "Missing software version after SSH-2.0" };
 
   const rebuilt = buildLine(PROTOCOL_2, software, trailing);
   return {
@@ -130,12 +130,12 @@ function readBanner(sock, { timeoutMs, maxBytes }) {
       buf = Buffer.concat([buf, chunk]);
       const found = identLineEnd(buf);
       if (found !== null) settle(resolve, { buf, found });
-      else if (buf.length > maxBytes) settle(reject, new Error("对端发来的标语过长，读取横幅已放弃"));
+      else if (buf.length > maxBytes) settle(reject, new Error("The peer's banner line is too long; reading the banner was abandoned"));
     };
     const onError = (error) => settle(reject, error);
-    const onClose = () => settle(reject, new Error("读取横幅前连接已被对端关闭"));
+    const onClose = () => settle(reject, new Error("The peer closed the connection before the banner was read"));
     const timer = setTimeout(
-      () => settle(reject, new Error("对端没有发送 SSH 横幅（读取超时）")),
+      () => settle(reject, new Error("The peer sent no SSH banner (read timed out)")),
       timeoutMs
     );
     sock.on("data", onData);
@@ -159,7 +159,7 @@ export async function withRepairedBanner(sock, { timeoutMs = 10000, maxBytes = 8
   if (plan.action === "reject") {
     // Nothing will consume this stream, so it must not be left open and paused.
     sock.destroy();
-    const error = new Error("对端 SSH 横幅无法使用：" + plan.reason);
+    const error = new Error("The peer's SSH banner cannot be used: " + plan.reason);
     error.banner = banner.replace(/[\r\n]+$/, "");
     throw error;
   }

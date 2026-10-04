@@ -260,15 +260,15 @@ export function SshDrawer({ api, credentials }) {
         style={drawerStyles.resizeHandle}
         onPointerDown={beginResize}
         role="separator"
-        aria-label="调整 SSH 终端宽度"
+        aria-label="Resize the SSH terminal"
         aria-orientation="vertical"
-        title="拖动以调整 SSH 终端宽度"
+        title="Drag to resize the SSH terminal"
       />
       <div data-dsh-ssh-ops-panel-header="true" style={drawerStyles.header}>
-        <span style={drawerStyles.title}>SSH 终端</span>
+        <span style={drawerStyles.title}>SSH Terminal</span>
         {/* Hide, not disconnect: connections and pooled terminals survive. */}
         <button onClick={() => sshUiSetOpen(false)} disabled={ui.busy} style={drawerStyles.btnSmall}
-          title="隐藏 SSH 终端面板（不断开连接）">×
+          title="Hide the SSH terminal panel (without disconnecting)">×
         </button>
       </div>
       <SshPanel api={api} credentials={credentials} />

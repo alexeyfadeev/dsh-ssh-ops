@@ -133,9 +133,9 @@ export function registerSftpTools(ctx, service) {
       render(args, value) {
         if (value.blocked) {
           const where = value.queued
-            ? "命令未执行；右侧 SSH 终端面板已弹出确认卡片，等待操作员点击“执行”或“撤销”："
-            : "命令未执行，无法预填，请粘贴到右侧终端执行：";
-          return [{ type: "text", text: `⚠️ 已拦截：${value.reason ?? ""}\n${where}\n\`\`\`bash\n${value.command ?? ""}\n\`\`\`\n请勿重试/绕行，由人工确认执行。` }];
+            ? "The command did not run; a confirmation card appeared in the SSH panel on the right, waiting for the operator to click “Run” or “Undo”: "
+            : "The command did not run and cannot be prefilled; paste it into the terminal on the right to run it: ";
+          return [{ type: "text", text: `⚠️ Blocked: ${value.reason ?? ""}\n${where}\n\`\`\`bash\n${value.command ?? ""}\n\`\`\`\nDo not retry or work around it; a human must confirm execution.` }];
         }
         return [{ type: "text", text: `Deleted ${value.path}` }];
       }
@@ -148,8 +148,8 @@ export function registerSftpTools(ctx, service) {
       const command = `rm -rf ${shellQuote(args.path)}`;
       const parsed = parseSimpleDeleteCommand(command);
       const trashScript = parsed ? buildTrashCommand(parsed.targets) : null;
-      const pending = service.prefillBlockedCommand(args.connection_id, command, "删除文件或目录（SFTP）", trashScript);
-      return { path: args.path, blocked: true, reason: "删除文件或目录（SFTP）", command, prefilled: pending.prefilled, queued: pending.queued };
+      const pending = service.prefillBlockedCommand(args.connection_id, command, "Delete files or directories (SFTP)", trashScript);
+      return { path: args.path, blocked: true, reason: "Delete files or directories (SFTP)", command, prefilled: pending.prefilled, queued: pending.queued };
     }
   }));
 

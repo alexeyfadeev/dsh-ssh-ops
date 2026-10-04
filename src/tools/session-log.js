@@ -24,8 +24,8 @@ export function registerSessionLogTools(ctx, service) {
         }
       },
       render(_args, value) {
-        if (!value.enabled) return [{ type: "text", text: "会话录制已关闭（config.sessionLogEnabled = false）。" }];
-        if (value.logs.length === 0) return [{ type: "text", text: "还没有已录制的会话。" }];
+        if (!value.enabled) return [{ type: "text", text: "Session recording is off (config.sessionLogEnabled = false)." }];
+        if (value.logs.length === 0) return [{ type: "text", text: "No sessions have been recorded yet." }];
         const lines = value.logs.map((log) => {
           const state = log.endedAt === null ? "recording" : `ended${log.exitCode === null ? "" : ` (exit ${log.exitCode})`}`;
           const where = [log.name, log.host].filter(Boolean).join(" @ ") || "unknown host";
@@ -60,9 +60,9 @@ export function registerSessionLogTools(ctx, service) {
         }
       },
       render(_args, value) {
-        if (value.hits.length === 0) return [{ type: "text", text: "没有匹配行。" }];
+        if (value.hits.length === 0) return [{ type: "text", text: "No matching lines." }];
         const lines = value.hits.map((hit) => `@${hit.offset}  ${hit.line}`);
-        return [{ type: "text", text: lines.join("\n") + (value.stoppedEarly ? "\n[到达命中上限，已停止]" : "") }];
+        return [{ type: "text", text: lines.join("\n") + (value.stoppedEarly ? "\n[hit limit reached; stopped]" : "") }];
       }
     },
     async execute(args) {
@@ -101,7 +101,7 @@ export function registerSessionLogTools(ctx, service) {
         }
       },
       render(_args, value) {
-        const tail = value.eof ? "" : `\n[已到 offset ${value.nextOffset} / ${value.size}，继续读取请用该 offset]`;
+        const tail = value.eof ? "" : `\n[reached offset ${value.nextOffset} / ${value.size}; use that offset to keep reading]`;
         return [{ type: "text", text: value.data + tail }];
       }
     },

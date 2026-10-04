@@ -84,7 +84,7 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
       // errors instead of silently changing transfer semantics.
       if (path === "/" && err?.code === "sftp-failed") {
         setTransferMode("scp");
-        setScpReason(err.message ?? "SFTP 子系统不可用");
+        setScpReason(err.message ?? "SFTP subsystem unavailable");
         setEntries(null);
         return;
       }
@@ -121,7 +121,7 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
     try {
       const value = await api.sftpReadFile(connectionId, joinPath(cwd, target.name));
       if (value.truncated) {
-        setError(`文件超过读取上限（${value.bytes} 字节），已截断——请用对话里的 sftp_read 指定更大 max_bytes`);
+        setError(`The file exceeds the read limit (${value.bytes} bytes) and was truncated — use sftp_read in the conversation with a larger max_bytes`);
         return;
       }
       // browser download
@@ -169,7 +169,7 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
       }
       load(cwdRef.current);
     } catch (err) {
-      setError(`上传失败：${err?.message ?? String(err)}`);
+      setError(`Upload failed: ${err?.message ?? String(err)}`);
     } finally {
       setBusy(false);
     }
@@ -192,7 +192,7 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
   };
 
   const doDelete = async (entry) => {
-    if (!window.confirm(`确定删除远程路径 ${joinPath(cwd, entry.name)} ？此操作不可恢复。`)) return;
+    if (!window.confirm(`Delete the remote path ${joinPath(cwd, entry.name)}? This cannot be undone.`)) return;
     setBusy(true);
     setError(null);
     try {
@@ -232,7 +232,7 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
       await api.scpWriteFile(connectionId, scpUploadPath.trim(), bytes);
       setScpUploadFile(null);
     } catch (err) {
-      setError(`SCP 上传失败：${err?.message ?? String(err)}`);
+      setError(`SCP upload failed: ${err?.message ?? String(err)}`);
     } finally {
       setBusy(false);
     }
@@ -246,7 +246,7 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
     try {
       const value = await api.scpReadFile(connectionId, path);
       if (value.truncated) {
-        setError(`文件超过读取上限（${value.bytes} 字节），未下载。`);
+        setError(`The file exceeds the read limit (${value.bytes} bytes); not downloaded.`);
         return;
       }
       const blob = new Blob([value.data], { type: "application/octet-stream" });
@@ -257,7 +257,7 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (err) {
-      setError(`SCP 下载失败：${err?.message ?? String(err)}`);
+      setError(`SCP download failed: ${err?.message ?? String(err)}`);
     } finally {
       setBusy(false);
     }
@@ -265,7 +265,7 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
 
   const inputRef = (el) => {
     if (el) {
-      el.placeholder = "选择要上传的文本文件…";
+      el.placeholder = "Choose a text file to upload…";
       el.style.display = "none";
     }
   };
@@ -274,12 +274,12 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
     return (
       <div style={filesStyles.root}>
         <div style={filesStyles.compatNotice}>
-          SFTP 子系统不可用，已切换到 SCP 兼容模式。仅支持单文件上传和下载，需填写远端完整路径。
+          The SFTP subsystem is unavailable, so SCP compatibility mode is active. Only single-file upload and download are supported, and the full remote path is required.
           {scpReason ? <div style={filesStyles.compatDetail}>{scpReason}</div> : null}
         </div>
         {error && <div style={filesStyles.error}>{error}</div>}
         <div style={filesStyles.scpCard}>
-          <div style={filesStyles.scpTitle}>上传文件</div>
+          <div style={filesStyles.scpTitle}>Upload file</div>
           <input
             type="file"
             onChange={(e) => setScpUploadFile(e.target.files?.[0] ?? null)}
@@ -288,21 +288,21 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
           <input
             value={scpUploadPath}
             onChange={(e) => setScpUploadPath(e.target.value)}
-            placeholder="远端完整目标路径，例如 /tmp/report.zip"
+            placeholder="Full remote destination path, e.g. /tmp/report.zip"
             style={filesStyles.input}
           />
-          <button onClick={scpUpload} disabled={busy || !scpUploadFile || !scpUploadPath.trim()} style={filesStyles.btnPrimary}>上传</button>
+          <button onClick={scpUpload} disabled={busy || !scpUploadFile || !scpUploadPath.trim()} style={filesStyles.btnPrimary}>Upload</button>
         </div>
         <div style={filesStyles.scpCard}>
-          <div style={filesStyles.scpTitle}>下载文件</div>
+          <div style={filesStyles.scpTitle}>Download file</div>
           <input
             value={scpDownloadPath}
             onChange={(e) => setScpDownloadPath(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && scpDownload()}
-            placeholder="远端完整文件路径，例如 /var/log/app.log"
+            placeholder="Full remote file path, e.g. /var/log/app.log"
             style={filesStyles.input}
           />
-          <button onClick={scpDownload} disabled={busy || !scpDownloadPath.trim()} style={filesStyles.btnPrimary}>下载</button>
+          <button onClick={scpDownload} disabled={busy || !scpDownloadPath.trim()} style={filesStyles.btnPrimary}>Download</button>
         </div>
       </div>
     );
@@ -323,13 +323,13 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
     try {
       const stat = await api.sftpStat(connectionId, path).catch(() => null);
       if (stat?.size > MAX_EDITABLE_BYTES) {
-        setError(`文件 ${formatSize(stat.size)} 超过 ${MAX_EDITABLE_BYTES / 1024 / 1024} MB 的编辑上限，请下载后编辑`);
+        setError(`The file ${formatSize(stat.size)} exceeds the ${MAX_EDITABLE_BYTES / 1024 / 1024} MB editing limit; download it and edit locally`);
         return;
       }
       const file = await api.sftpReadFile(connectionId, path, MAX_EDITABLE_BYTES + 1);
       const decoded = decodeEditableText(file.data);
       if (!decoded.ok) {
-        setError(`${entry.name}：${decoded.reason}`);
+        setError(`${entry.name}: ${decoded.reason}`);
         return;
       }
       setEditing({
@@ -341,7 +341,7 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
         mtime: stat?.mtime ?? entry.mtime ?? null
       });
     } catch (err) {
-      setError(`打开失败：${err?.message ?? String(err)}`);
+      setError(`Open failed: ${err?.message ?? String(err)}`);
     } finally {
       setBusy(false);
     }
@@ -356,14 +356,14 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
       // moved mtime asks before the editor's copy wins.
       const fresh = await api.sftpStat(connectionId, editing.path).catch(() => null);
       if (fresh && editing.mtime != null && fresh.mtime !== editing.mtime
-        && !globalThis.confirm?.("服务器上的文件已被其他程序修改，仍要用编辑器中的内容覆盖吗？")) {
+        && !globalThis.confirm?.("The file on the server was changed by another program. Overwrite it with the editor contents?")) {
         return;
       }
       await api.sftpWriteFile(connectionId, editing.path, encodeEditableText(editing.text));
       setEditing(null);
       load(cwdRef.current);
     } catch (err) {
-      setError(`保存失败：${err?.message ?? String(err)}`);
+      setError(`Save failed: ${err?.message ?? String(err)}`);
     } finally {
       setEditorBusy(false);
     }
@@ -374,25 +374,25 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
   return (
     <div style={filesStyles.root}>
       <div style={filesStyles.toolbar}>
-        <button onClick={goUp} disabled={cwd === "/"} style={filesStyles.btn} title="上级目录">↑</button>
+        <button onClick={goUp} disabled={cwd === "/"} style={filesStyles.btn} title="Parent directory">↑</button>
         <span style={filesStyles.path} title={cwd}>{cwd}</span>
         <input
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="过滤"
-          title="按名称过滤当前目录"
-          aria-label="按名称过滤当前目录"
+          placeholder="Filter"
+          title="Filter this directory by name"
+          aria-label="Filter this directory by name"
           style={filesStyles.filterInput}
         />
         <button
           onClick={pinCurrent}
           style={filesStyles.btn}
-          title={favorites.includes(cwd) ? "取消收藏当前目录" : "收藏当前目录"}
-          aria-label={favorites.includes(cwd) ? "取消收藏当前目录" : "收藏当前目录"}
+          title={favorites.includes(cwd) ? "Remove this directory from favorites" : "Favorite this directory"}
+          aria-label={favorites.includes(cwd) ? "Remove this directory from favorites" : "Favorite this directory"}
         >{favorites.includes(cwd) ? "★" : "☆"}</button>
-        <button onClick={() => setCreating(!creating)} style={filesStyles.btn} title="新建目录">＋</button>
-        <label style={filesStyles.btn} title="上传文件（可多选）">
-          上传
+        <button onClick={() => setCreating(!creating)} style={filesStyles.btn} title="New folder">+</button>
+        <label style={filesStyles.btn} title="Upload files (multi-select)">
+          Upload
           <input
             ref={inputRef}
             type="file"
@@ -405,15 +405,15 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
             }}
           />
         </label>
-        <button onClick={() => load(cwd)} disabled={busy} style={filesStyles.btn} title="刷新">↻</button>
+        <button onClick={() => load(cwd)} disabled={busy} style={filesStyles.btn} title="Refresh">↻</button>
       </div>
 
       {favorites.length > 0 && (
         <div style={filesStyles.favorites}>
           {favorites.map((path) => (
             <span key={path} style={filesStyles.favoriteChip}>
-              <button type="button" onClick={() => load(path)} style={filesStyles.favoritePath} title={`进入 ${path}`}>{path}</button>
-              <button type="button" onClick={() => unpin(path)} style={filesStyles.favoriteRemove} title={`取消收藏 ${path}`}>×</button>
+              <button type="button" onClick={() => load(path)} style={filesStyles.favoritePath} title={`Open ${path}`}>{path}</button>
+              <button type="button" onClick={() => unpin(path)} style={filesStyles.favoriteRemove} title={`Remove ${path} from favorites`}>×</button>
             </span>
           ))}
         </div>
@@ -426,11 +426,11 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && doCreate()}
-            placeholder="新目录名"
+            placeholder="New folder name"
             style={filesStyles.input}
           />
-          <button onClick={doCreate} disabled={busy || !newName.trim()} style={filesStyles.btnPrimary}>创建</button>
-          <button onClick={() => setCreating(false)} style={filesStyles.btn}>取消</button>
+          <button onClick={doCreate} disabled={busy || !newName.trim()} style={filesStyles.btnPrimary}>Create</button>
+          <button onClick={() => setCreating(false)} style={filesStyles.btn}>Cancel</button>
         </div>
       )}
 
@@ -446,8 +446,8 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
             placeholder={selected.name}
             style={filesStyles.input}
           />
-          <button onClick={doRename} disabled={busy || !renameTo.trim()} style={filesStyles.btnPrimary}>改名</button>
-          <button onClick={() => setRenaming(false)} style={filesStyles.btn}>取消</button>
+          <button onClick={doRename} disabled={busy || !renameTo.trim()} style={filesStyles.btnPrimary}>Rename</button>
+          <button onClick={() => setRenaming(false)} style={filesStyles.btn}>Cancel</button>
         </div>
       )}
 
@@ -462,11 +462,11 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
           if (files.length > 0) upload(files);
         }}
       >
-        {dragActive && <div style={filesStyles.dropHint}>松开鼠标：上传到 {cwd}</div>}
+        {dragActive && <div style={filesStyles.dropHint}>Release to upload to {cwd}</div>}
         {!entries || entries.length === 0 ? (
-          <div style={filesStyles.empty}>{busy ? "加载中…" : (entries && entries.length === 0 ? "（空目录，可拖入文件上传）" : "请连接服务器")}</div>
+          <div style={filesStyles.empty}>{busy ? "Loading…" : (entries && entries.length === 0 ? "(empty folder — drop files here to upload)" : "Connect to a server")}</div>
         ) : visibleEntries.length === 0 ? (
-          <div style={filesStyles.empty}>（无匹配项）</div>
+          <div style={filesStyles.empty}>(no matches)</div>
         ) : (
           visibleEntries.map((entry) => (
             <div
@@ -480,7 +480,7 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
                 if (entry.isDirectory) openEntry(entry);
                 else download(entry);
               }}
-              title={entry.isDirectory ? `${entry.name}（双击打开）` : `${entry.name}  (${entry.size} bytes，双击下载)`}
+              title={entry.isDirectory ? `${entry.name} (double-click to open)` : `${entry.name}  (${entry.size} bytes, double-click to download)`}
             >
               <span style={filesStyles.icon}>
                 {entry.isDirectory
@@ -501,16 +501,16 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
                       onClick={() => onCd(joinPath(cwd, entry.name))}
                       disabled={busy}
                       style={filesStyles.btnTiny}
-                      title="在右侧终端 cd 到此目录"
-                      aria-label={`在终端 cd 到 ${joinPath(cwd, entry.name)}`}
+                      title="cd to this directory in the terminal on the right"
+                      aria-label={`cd to ${joinPath(cwd, entry.name)} in the terminal`}
                     >cd</button>
                   )}
                   {!entry.isDirectory && (
-                    <button onClick={() => openEditor(entry)} disabled={busy} style={filesStyles.btnTiny} title="在文本编辑器中打开（上限 10 MB）">编辑</button>
+                    <button onClick={() => openEditor(entry)} disabled={busy} style={filesStyles.btnTiny} title="Open in the text editor (10 MB limit)">Edit</button>
                   )}
-                  <button onClick={() => download(entry)} disabled={busy} style={filesStyles.btnTiny}>下载</button>
-                  <button onClick={() => setRenaming(!renaming)} style={filesStyles.btnTiny}>改名</button>
-                  <button onClick={() => doDelete(entry)} disabled={busy} style={filesStyles.btnDanger}>删除</button>
+                  <button onClick={() => download(entry)} disabled={busy} style={filesStyles.btnTiny}>Download</button>
+                  <button onClick={() => setRenaming(!renaming)} style={filesStyles.btnTiny}>Rename</button>
+                  <button onClick={() => doDelete(entry)} disabled={busy} style={filesStyles.btnDanger}>Delete</button>
                 </span>
               )}
             </div>
@@ -521,11 +521,11 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
       {editing && (
         <div style={filesStyles.editorBackdrop}>
           <div style={filesStyles.editorDialog}>
-            <div style={filesStyles.editorTitle} title={editing.path}>编辑：{editing.path}</div>
+            <div style={filesStyles.editorTitle} title={editing.path}>Editing: {editing.path}</div>
             <div style={filesStyles.editorMeta}>
               {formatSize(editing.bytes)} · UTF-8
-              {editing.replaced ? " · 含无法按 UTF-8 解码的字节（保存会按 UTF-8 重写）" : ""}
-              {editing.text !== editing.original ? " · 已修改" : ""}
+              {editing.replaced ? " · contains bytes that do not decode as UTF-8 (saving rewrites it as UTF-8)" : ""}
+              {editing.text !== editing.original ? " · modified" : ""}
             </div>
             <textarea
               autoFocus
@@ -535,13 +535,13 @@ export function SshFiles({ api, connectionId, onCd, initialPath = "/" }) {
               style={filesStyles.editorText}
             />
             <div style={filesStyles.editorActions}>
-              <button type="button" onClick={() => setEditing(null)} style={filesStyles.btn}>关闭</button>
+              <button type="button" onClick={() => setEditing(null)} style={filesStyles.btn}>Close</button>
               <button
                 type="button"
                 onClick={saveEditor}
                 disabled={editorBusy || editing.text === editing.original}
                 style={filesStyles.btnPrimary}
-              >{editorBusy ? "保存中…" : "保存"}</button>
+              >{editorBusy ? "Saving…" : "Save"}</button>
             </div>
           </div>
         </div>

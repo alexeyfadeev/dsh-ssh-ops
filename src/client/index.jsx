@@ -106,7 +106,7 @@ export async function apply(ctx) {
         name: "settings.section",
         id: "ssh-ops-resources",
         order: 35,
-        label: "SSH 资源",
+        label: "SSH Resources",
         icon: "terminal",
         locale: NS,
         inject: () => ({ api, credentials: ctx.remote?.credentials })
@@ -369,9 +369,9 @@ function SshDrawerTabAction() {
   return React.createElement(SshTabButtonHost, {
     press: () => sshUiSetOpen(!getSshUiSnapshot().open),
     isActive: () => getSshUiSnapshot().open,
-    title: "打开 SSH 终端",
-    activeTitle: "关闭 SSH 终端",
-    ariaLabel: "SSH 终端",
+    title: "Open SSH terminal",
+    activeTitle: "Close SSH terminal",
+    ariaLabel: "SSH Terminal",
     watchActive: false
   });
 }

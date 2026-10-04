@@ -189,16 +189,16 @@ export function registerDbTools(ctx, service) {
       },
       render(_args, value) {
         if (value.quarantined) {
-          const lines = [`♻️ DROP 已转换为隔离改名（数据未删除，可随时改回）：${value.sql} → ${value.renamedTo}`];
+          const lines = [`♻️ DROP was converted to a quarantine rename (no data deleted; it can be renamed back at any time): ${value.sql} → ${value.renamedTo}`];
           if (Array.isArray(value.backup) && value.backup.length > 0) {
             lines.push(backupSummary(value.backup));
           }
-          lines.push(value.notice ?? "彻底删除请由操作者在数据库面板执行。");
+          lines.push(value.notice ?? "The final deletion must be performed by the operator in the database panel.");
           return [{ type: "text", text: lines.join("\n") }];
         }
         if (value.blocked) {
           const backupNote = Array.isArray(value.backup) && value.backup.length > 0 ? `\n${backupSummary(value.backup)}` : "";
-          return [{ type: "text", text: `⚠️ 已拦截：${value.reason ?? ""}\nSQL 未执行，请在数据库面板 SQL 编辑器粘贴执行：\n\`\`\`sql\n${value.sql ?? ""}\n\`\`\`${backupNote}\n请勿重试/绕行，由人工执行。` }];
+          return [{ type: "text", text: `⚠️ Blocked: ${value.reason ?? ""}\nThe SQL did not run; paste it into the SQL editor of the database panel to execute it:\n\`\`\`sql\n${value.sql ?? ""}\n\`\`\`${backupNote}\nDo not retry or work around it; a human must run it.` }];
         }
         let text = `Affected ${value.affectedRows} row(s).`;
         if (value.insertId !== undefined) text += ` Insert id: ${value.insertId}.`;

@@ -12,9 +12,9 @@ const { useEffect, useRef, useState } = React;
 const LEGACY_PROFILES_KEY = "dsh-ssh-ops.server-profiles.v1";
 
 const HOST_KEY_MODE_LABELS = {
-  "accept-new": "默认（首次信任，变化才拒）",
-  verify: "严格（拒绝未知主机）",
-  off: "关闭校验（不推荐）"
+  "accept-new": "Default (trust on first use, reject on change)",
+  verify: "Strict (reject unknown hosts)",
+  off: "Off (not recommended)"
 };
 
 function emptyForm() {
@@ -56,12 +56,12 @@ function profileToForm(profile) {
 
 async function credentialWrite(credentials, ref, value) {
   const response = await credentials.set(ref, value);
-  if (response && !response.ok) throw new Error(response.error?.message ?? "无法保存凭据");
+  if (response && !response.ok) throw new Error(response.error?.message ?? "Could not save the credentials");
 }
 
 async function credentialUnset(credentials, ref) {
   const response = await credentials.unset(ref);
-  if (response && !response.ok) throw new Error(response.error?.message ?? "无法清除凭据");
+  if (response && !response.ok) throw new Error(response.error?.message ?? "Could not clear the credentials");
 }
 
 function readLegacyProfiles() {
@@ -113,28 +113,28 @@ function ResourceEditor({ initial, groups, profiles, sharedCredentials = [], cre
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
-    if (file.size > 1024 * 1024) return setError("私钥文件不能超过 1 MB");
+    if (file.size > 1024 * 1024) return setError("The private key file must not exceed 1 MB");
     try {
       const secret = await file.text();
-      if (!secret.trim()) throw new Error("所选私钥文件为空");
+      if (!secret.trim()) throw new Error("The chosen private key file is empty");
       setForm((current) => ({ ...current, secret }));
       setError(null);
     } catch (cause) {
-      setError(cause?.message ?? "无法读取私钥文件");
+      setError(cause?.message ?? "Could not read the private key file");
     }
   };
 
   const submit = async () => {
     if (!form.name.trim() || !form.host.trim() || !form.username.trim()) {
-      setError("请填写名称、主机和用户名");
+      setError("Enter a name, host and username");
       return;
     }
     if (!credentials) {
-      setError("当前 DSH 未提供凭据服务，不能安全保存 SSH 认证信息");
+      setError("This DSH build provides no credential service, so SSH credentials cannot be stored safely");
       return;
     }
     if (form.proxyJump.some((hop) => !hop.profileId)) {
-      setError("请选择每台跳板服务器");
+      setError("Choose a server for every jump hop");
       return;
     }
     setBusy(true);
@@ -183,35 +183,35 @@ function ResourceEditor({ initial, groups, profiles, sharedCredentials = [], cre
   return (
     <div style={styles.backdrop} onClick={busy ? undefined : onClose}>
       <div className="dsh-ssh-ops-resource-modal" style={styles.dialog} onClick={(event) => event.stopPropagation()}>
-        <div style={styles.dialogTitle}>{form.profileId ? "编辑 SSH 资源" : "新增 SSH 资源"}</div>
-        <Field label="名称"><input value={form.name} onChange={set("name")} placeholder="阿里云生产环境" style={styles.input} /></Field>
-        <Field label="主机"><input value={form.host} onChange={set("host")} placeholder="example.com 或 IP 地址" style={styles.input} /></Field>
+        <div style={styles.dialogTitle}>{form.profileId ? "Edit SSH resource" : "Add SSH resource"}</div>
+        <Field label="Name"><input value={form.name} onChange={set("name")} placeholder="Production environment" style={styles.input} /></Field>
+        <Field label="Host"><input value={form.host} onChange={set("host")} placeholder="example.com or an IP address" style={styles.input} /></Field>
         <div style={styles.credentialColumns}>
-          <Field label="端口"><input value={form.port} onChange={set("port")} inputMode="numeric" style={styles.input} /></Field>
-          <Field label="用户名"><input value={form.username} onChange={set("username")} style={styles.input} /></Field>
+          <Field label="Port"><input value={form.port} onChange={set("port")} inputMode="numeric" style={styles.input} /></Field>
+          <Field label="Username"><input value={form.username} onChange={set("username")} style={styles.input} /></Field>
         </div>
         <div style={styles.twoColumns}>
-        <Field label="认证方式">
+        <Field label="Authentication">
           <select value={form.authKind} onChange={set("authKind")} style={styles.input}>
-            <option value="password">密码</option>
-            <option value="key">PEM / 私钥</option>
+            <option value="password">Password</option>
+            <option value="key">PEM / private key</option>
           </select>
         </Field>
-        <Field label="共享凭据">
-          <select value={form.credentialId} onChange={set("credentialId")} style={styles.input}><option value="">此服务器专属凭据</option>{sharedCredentials.filter((item) => item.authKind === form.authKind).map((item) => <option key={item.credentialId} value={item.credentialId}>{item.name}</option>)}</select>
+        <Field label="Shared credential">
+          <select value={form.credentialId} onChange={set("credentialId")} style={styles.input}><option value="">Credential specific to this server</option>{sharedCredentials.filter((item) => item.authKind === form.authKind).map((item) => <option key={item.credentialId} value={item.credentialId}>{item.name}</option>)}</select>
         </Field>
         </div>
         <div style={styles.credentialColumns}>
-        <Field label="分组">
+        <Field label="Group">
           <select value={form.groupId} onChange={set("groupId")} style={styles.input}>
-            <option value="">未分组</option>
+            <option value="">Ungrouped</option>
             {groups.map((group) => <option key={group.groupId} value={group.groupId}>{group.name}</option>)}
           </select>
         </Field>
-        <Field label="默认项目目录">
-          <input value={form.defaultProjectPath} onChange={set("defaultProjectPath")} placeholder="例如 /srv/apps/my-service" style={styles.input} />
+        <Field label="Default project directory">
+          <input value={form.defaultProjectPath} onChange={set("defaultProjectPath")} placeholder="e.g. /srv/apps/my-service" style={styles.input} />
         </Field>
-        <Field label="主机指纹校验">
+        <Field label="Host key checking">
           <select value={form.hostKeyMode} onChange={set("hostKeyMode")} style={styles.input}>
             <option value="accept-new">{HOST_KEY_MODE_LABELS["accept-new"]}</option>
             <option value="verify">{HOST_KEY_MODE_LABELS.verify}</option>
@@ -219,32 +219,32 @@ function ResourceEditor({ initial, groups, profiles, sharedCredentials = [], cre
           </select>
         </Field>
         </div>
-        <Field label={form.authKind === "password" ? "密码" : "私钥（PEM / .key）"} hint={primaryConfigured ? "已保存；留空保持不变" : "保存后仅显示已配置状态"}>
+        <Field label={form.authKind === "password" ? "Password" : "Private key (PEM / .key)"} hint={primaryConfigured ? "Saved; leave empty to keep it unchanged" : "After saving, only the configured state is shown"}>
           {form.authKind === "password" ? (
             <input type="password" value={form.secret} onChange={set("secret")} style={styles.input} />
           ) : (
             <>
               <textarea value={form.secret} onChange={set("secret")} rows={4} style={{ ...styles.input, fontFamily: "monospace" }} />
               <input ref={keyFileInput} type="file" accept=".pem,.key,.rsa,.ed25519,.txt,text/plain" onChange={importKey} style={{ display: "none" }} />
-              <button type="button" onClick={() => keyFileInput.current?.click()} style={styles.secondary}>导入 PEM / 私钥文件</button>
+              <button type="button" onClick={() => keyFileInput.current?.click()} style={styles.secondary}>Import PEM / private key file</button>
             </>
           )}
-          {primaryConfigured && <Check label="清除已保存的认证信息" checked={form.clearSecret} onChange={set("clearSecret")} />}
+          {primaryConfigured && <Check label="Clear the saved credentials" checked={form.clearSecret} onChange={set("clearSecret")} />}
         </Field>
         {form.authKind === "key" && (
-          <Field label="私钥口令" hint={initial?.passphraseConfigured ? "已保存；留空保持不变" : "可选"}>
+          <Field label="Private key passphrase" hint={initial?.passphraseConfigured ? "Saved; leave empty to keep it unchanged" : "Optional"}>
             <input type="password" value={form.passphrase} onChange={set("passphrase")} style={styles.input} />
-            {initial?.passphraseConfigured && <Check label="清除已保存的私钥口令" checked={form.clearPassphrase} onChange={set("clearPassphrase")} />}
+            {initial?.passphraseConfigured && <Check label="Clear the saved private key passphrase" checked={form.clearPassphrase} onChange={set("clearPassphrase")} />}
           </Field>
         )}
-        <Field label="跳板机（ProxyJump）">
-          {form.proxyJump.map((hop, index) => <div key={index} style={styles.jumpRow}><select value={hop.profileId ?? ""} onChange={(event) => updateJump(index, "profileId", event.target.value)} style={styles.input}><option value="">选择已保存服务器</option>{profiles.filter((profile) => profile.profileId !== form.profileId).map((profile) => <option key={profile.profileId} value={profile.profileId}>{profile.name} · {profile.username}@{profile.host}:{profile.port}</option>)}</select><button type="button" onClick={() => removeJump(index)} style={styles.danger}>移除</button></div>)}
-          <button type="button" onClick={addJump} style={styles.secondary}>＋ 添加跳板机</button>
+        <Field label="Jump host (ProxyJump)">
+          {form.proxyJump.map((hop, index) => <div key={index} style={styles.jumpRow}><select value={hop.profileId ?? ""} onChange={(event) => updateJump(index, "profileId", event.target.value)} style={styles.input}><option value="">Choose a saved server</option>{profiles.filter((profile) => profile.profileId !== form.profileId).map((profile) => <option key={profile.profileId} value={profile.profileId}>{profile.name} · {profile.username}@{profile.host}:{profile.port}</option>)}</select><button type="button" onClick={() => removeJump(index)} style={styles.danger}>Remove</button></div>)}
+          <button type="button" onClick={addJump} style={styles.secondary}>+ Add jump host</button>
         </Field>
         {error && <div style={styles.error} role="alert">{error}</div>}
         <div style={styles.actions}>
-          <button type="button" disabled={busy} onClick={onClose} style={styles.secondary}>取消</button>
-          <button type="button" disabled={busy} onClick={submit} style={styles.primary}>{busy ? "保存中…" : "保存资源"}</button>
+          <button type="button" disabled={busy} onClick={onClose} style={styles.secondary}>Cancel</button>
+          <button type="button" disabled={busy} onClick={submit} style={styles.primary}>{busy ? "Saving…" : "Save resource"}</button>
         </div>
       </div>
     </div>
@@ -263,11 +263,11 @@ function SharedCredentialEditor({ initial, credentials, api, onClose, onSaved })
   const [name, setName] = useState(initial?.name ?? ""); const [authKind, setAuthKind] = useState(initial?.authKind ?? "key"); const [secret, setSecret] = useState(""); const [passphrase, setPassphrase] = useState(""); const [error, setError] = useState(null); const [busy, setBusy] = useState(false); const fileInput = useRef(null);
   const importKey = async (file) => {
     if (!file) return;
-    if (file.size > 1024 * 1024) return setError("私钥文件不能超过 1 MB");
-    try { const text = await file.text(); if (!text.trim()) throw new Error("所选私钥文件为空"); const problem = privateKeyProblem(text); if (problem) throw new Error(problem); setSecret(text); setError(null); } catch (cause) { setError(cause?.message ?? "无法读取私钥文件"); }
+    if (file.size > 1024 * 1024) return setError("The private key file must not exceed 1 MB");
+    try { const text = await file.text(); if (!text.trim()) throw new Error("The chosen private key file is empty"); const problem = privateKeyProblem(text); if (problem) throw new Error(problem); setSecret(text); setError(null); } catch (cause) { setError(cause?.message ?? "Could not read the private key file"); }
   };
-  const save = async () => { if (!name.trim()) return setError("请填写凭据名称"); setBusy(true); try { const saved = await api.credentialSave({ ...(initial?.credentialId ? { credentialId: initial.credentialId } : {}), name: name.trim(), authKind }); const ref = authKind === "password" ? saved.credentialRefs.password : saved.credentialRefs.privateKey; if (secret) await credentialWrite(credentials, ref, secret); if (authKind === "key" && passphrase) await credentialWrite(credentials, saved.credentialRefs.passphrase, passphrase); await onSaved(); onClose(); } catch (cause) { setError(cause?.message ?? String(cause)); } finally { setBusy(false); } };
-  return <div style={styles.backdrop} onClick={onClose}><div className="dsh-ssh-ops-resource-modal" style={styles.dialog} onClick={(event) => event.stopPropagation()} onDragOver={(event) => { if (authKind === "key") event.preventDefault(); }} onDrop={(event) => { if (authKind !== "key") return; event.preventDefault(); importKey(event.dataTransfer.files?.[0]); }}><div style={styles.dialogTitle}>{initial ? "编辑共享凭据" : "新增共享凭据"}</div><Field label="名称"><input value={name} onChange={(event) => setName(event.target.value)} placeholder="生产环境运维私钥" style={styles.input} /></Field><Field label="认证方式"><select value={authKind} onChange={(event) => setAuthKind(event.target.value)} style={styles.input}><option value="key">PEM / 私钥</option><option value="password">密码</option></select></Field><Field label={authKind === "key" ? "私钥" : "密码"} hint={initial?.credentialConfigured ? "已保存；留空保持不变" : ""}>{authKind === "key" ? <><textarea value={secret} onChange={(event) => setSecret(event.target.value)} rows={4} style={{ ...styles.input, fontFamily: "monospace" }} /><input ref={fileInput} type="file" accept=".pem,.key,.rsa,.ed25519,.txt,text/plain" onChange={(event) => { importKey(event.target.files?.[0]); event.target.value = ""; }} style={{ display: "none" }} /><button type="button" onClick={() => fileInput.current?.click()} style={styles.secondary}>选择私钥文件</button><small style={styles.hint}>也可将 PEM / 私钥文件拖入此窗口。</small></> : <input type="password" value={secret} onChange={(event) => setSecret(event.target.value)} style={styles.input} />}</Field>{authKind === "key" && <Field label="私钥口令"><input type="password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} style={styles.input} /></Field>}{error && <div style={styles.error}>{error}</div>}<div style={styles.actions}><button type="button" onClick={onClose} style={styles.secondary}>取消</button><button type="button" disabled={busy} onClick={save} style={styles.primary}>{busy ? "保存中…" : "保存凭据"}</button></div></div></div>;
+  const save = async () => { if (!name.trim()) return setError("Enter a credential name"); setBusy(true); try { const saved = await api.credentialSave({ ...(initial?.credentialId ? { credentialId: initial.credentialId } : {}), name: name.trim(), authKind }); const ref = authKind === "password" ? saved.credentialRefs.password : saved.credentialRefs.privateKey; if (secret) await credentialWrite(credentials, ref, secret); if (authKind === "key" && passphrase) await credentialWrite(credentials, saved.credentialRefs.passphrase, passphrase); await onSaved(); onClose(); } catch (cause) { setError(cause?.message ?? String(cause)); } finally { setBusy(false); } };
+  return <div style={styles.backdrop} onClick={onClose}><div className="dsh-ssh-ops-resource-modal" style={styles.dialog} onClick={(event) => event.stopPropagation()} onDragOver={(event) => { if (authKind === "key") event.preventDefault(); }} onDrop={(event) => { if (authKind !== "key") return; event.preventDefault(); importKey(event.dataTransfer.files?.[0]); }}><div style={styles.dialogTitle}>{initial ? "Edit shared credential" : "Add shared credential"}</div><Field label="Name"><input value={name} onChange={(event) => setName(event.target.value)} placeholder="Production ops private key" style={styles.input} /></Field><Field label="Authentication"><select value={authKind} onChange={(event) => setAuthKind(event.target.value)} style={styles.input}><option value="key">PEM / private key</option><option value="password">Password</option></select></Field><Field label={authKind === "key" ? "Private key" : "Password"} hint={initial?.credentialConfigured ? "Saved; leave empty to keep it unchanged" : ""}>{authKind === "key" ? <><textarea value={secret} onChange={(event) => setSecret(event.target.value)} rows={4} style={{ ...styles.input, fontFamily: "monospace" }} /><input ref={fileInput} type="file" accept=".pem,.key,.rsa,.ed25519,.txt,text/plain" onChange={(event) => { importKey(event.target.files?.[0]); event.target.value = ""; }} style={{ display: "none" }} /><button type="button" onClick={() => fileInput.current?.click()} style={styles.secondary}>Choose a private key file</button><small style={styles.hint}>You can also drag a PEM / private key file into this window.</small></> : <input type="password" value={secret} onChange={(event) => setSecret(event.target.value)} style={styles.input} />}</Field>{authKind === "key" && <Field label="Private key passphrase"><input type="password" value={passphrase} onChange={(event) => setPassphrase(event.target.value)} style={styles.input} /></Field>}{error && <div style={styles.error}>{error}</div>}<div style={styles.actions}><button type="button" onClick={onClose} style={styles.secondary}>Cancel</button><button type="button" disabled={busy} onClick={save} style={styles.primary}>{busy ? "Saving…" : "Save credential"}</button></div></div></div>;
 }
 
 /** Green shield when a host's fingerprint is trusted; grey/dim when not. */
@@ -295,16 +295,16 @@ function HostKeyPopup({ host, port, known, copied, onCopy, onForget, forgetBusy,
   return (
     <div style={styles.backdrop} onClick={onClose}>
       <div style={styles.dialog} onClick={(event) => event.stopPropagation()}>
-        <div style={styles.dialogTitle}>主机指纹 · {host}:{port}</div>
+        <div style={styles.dialogTitle}>Host key · {host}:{port}</div>
         <div style={styles.meta}>{known.algorithm || "ssh-host-key"}</div>
-        <Field label="SHA-256 指纹" hint="可与此服务器上 ssh-keygen -lf /etc/ssh/ssh_host_*_key.pub 的输出比对">
+        <Field label="SHA-256 fingerprint" hint="Compare with the output of ssh-keygen -lf /etc/ssh/ssh_host_*_key.pub on this server">
           <div style={styles.fingerprint}>SHA256:{known.fingerprint}</div>
         </Field>
-        <div style={styles.meta}>首次信任 {new Date(known.firstSeenAt).toLocaleString()} · 最近 {new Date(known.lastSeenAt).toLocaleString()}</div>
+        <div style={styles.meta}>Trusted on first use {new Date(known.firstSeenAt).toLocaleString()} · Last {new Date(known.lastSeenAt).toLocaleString()}</div>
         <div style={styles.actions}>
-          <button type="button" onClick={() => onCopy(host, port, known.fingerprint)} style={styles.secondary}>{copied === key ? "已复制" : "复制指纹"}</button>
-          <button type="button" disabled={forgetBusy === key} onClick={() => onForget(host, port)} style={styles.danger}>{forgetBusy === key ? "忘记中…" : "忘记指纹"}</button>
-          <button type="button" onClick={onClose} style={styles.secondary}>关闭</button>
+          <button type="button" onClick={() => onCopy(host, port, known.fingerprint)} style={styles.secondary}>{copied === key ? "Copied" : "Copy fingerprint"}</button>
+          <button type="button" disabled={forgetBusy === key} onClick={() => onForget(host, port)} style={styles.danger}>{forgetBusy === key ? "Forgetting…" : "Forget host key"}</button>
+          <button type="button" onClick={onClose} style={styles.secondary}>Close</button>
         </div>
       </div>
     </div>
@@ -436,7 +436,7 @@ export function SshResources({ api, credentials }) {
   };
 
   const remove = async (profile) => {
-    if (!window.confirm(`删除 SSH 资源“${profile.name}”？这会删除该资源保存的凭据，但不会断开已经建立的连接。`)) return;
+    if (!window.confirm(`Delete the SSH resource “${profile.name}”? This deletes the credentials saved for it but does not close connections that are already open.`)) return;
     try {
       await api.profileDelete(profile.profileId);
       await refresh();
@@ -471,7 +471,7 @@ export function SshResources({ api, credentials }) {
   };
 
   const deleteGroup = async (group) => {
-    if (!window.confirm(`删除分组“${group.name}”？其中 ${group.profileCount} 台服务器会移到“未分组”，不会断开已建立的连接。`)) return;
+    if (!window.confirm(`Delete the group “${group.name}”? Its ${group.profileCount} servers move to “Ungrouped”, and open connections stay up.`)) return;
     try {
       await api.groupDelete(group.groupId);
       await refresh();
@@ -481,7 +481,7 @@ export function SshResources({ api, credentials }) {
   };
 
   const forgetHost = async (host, port) => {
-    if (!window.confirm(`忘记 ${host}:${port} 的主机指纹？下次连接将重新信任该服务器当前指纹。仅当服务器被合法重装/更换时才应操作。`)) return;
+    if (!window.confirm(`Forget the host key for ${host}:${port}? The next connection will trust whatever key the server presents. Only do this if the server was legitimately reinstalled or replaced.`)) return;
     const key = `${host}:${port}`;
     setForgetBusy(key);
     try {
@@ -497,12 +497,12 @@ export function SshResources({ api, credentials }) {
   const copyHostFingerprint = async (host, port, fingerprint) => {
     const key = `${host}:${port}`;
     try {
-      if (!navigator.clipboard?.writeText) throw new Error("当前环境不支持复制到剪贴板");
+      if (!navigator.clipboard?.writeText) throw new Error("This environment does not support copying to the clipboard");
       await navigator.clipboard.writeText(`SHA256:${fingerprint}`);
       setCopiedHostKey(key);
       setTimeout(() => setCopiedHostKey((current) => current === key ? null : current), 1500);
     } catch (cause) {
-      setError(cause?.message ?? "无法复制主机指纹");
+      setError(cause?.message ?? "Could not copy the host key");
     }
   };
 
@@ -531,22 +531,22 @@ export function SshResources({ api, credentials }) {
   const renderProfiles = (items) => items.length === 0 ? null : <div style={styles.list}>{items.map((profile) => (
     <div key={profile.profileId} style={styles.card}>
       <div style={styles.cardMain}>
-        <div style={styles.cardTitle}>{profile.name}{profile.connected && <span style={styles.connected}>已连接</span>}</div>
+        <div style={styles.cardTitle}>{profile.name}{profile.connected && <span style={styles.connected}>Connected</span>}</div>
         <div style={styles.address}>{profile.username}@{profile.host}:{profile.port}</div>
-        {profile.defaultProjectPath && <div style={styles.meta}>项目：{profile.defaultProjectPath}</div>}
+        {profile.defaultProjectPath && <div style={styles.meta}>Project: {profile.defaultProjectPath}</div>}
       </div>
       <div style={styles.cardActions}>
         {(() => {
           const kh = knownByHost.get(`${profile.host}:${profile.port}`);
           return (
-            <button type="button" disabled={!kh} onClick={() => kh && setHostKeyPopup(kh)} title={kh ? `已信任主机指纹（${kh.algorithm}）· 点击查看/复制/忘记` : "尚未信任该主机指纹"} aria-label={kh ? `查看 ${profile.host}:${profile.port} 的主机指纹` : "尚未信任主机指纹"} style={styles.iconButton}><ShieldIcon trusted={!!kh} /></button>
+            <button type="button" disabled={!kh} onClick={() => kh && setHostKeyPopup(kh)} title={kh ? `Host key trusted (${kh.algorithm}) · click to view / copy / forget` : "This host key is not trusted yet"} aria-label={kh ? `View the host key for ${profile.host}:${profile.port}` : "Host key not trusted yet"} style={styles.iconButton}><ShieldIcon trusted={!!kh} /></button>
           );
         })()}
-        {profile.connected && <button type="button" onClick={() => disconnectProfile(profile)} title="断开连接" aria-label={`断开 ${profile.name}`} style={styles.actionTextButton}>断开</button>}
-        <button type="button" disabled={connecting === profile.profileId || !profile.credentialConfigured} onClick={() => connect(profile)} title={connecting === profile.profileId ? "连接中" : profile.defaultProjectPath ? `进入项目 ${profile.defaultProjectPath}` : "连接并打开终端"} aria-label={profile.defaultProjectPath ? `进入 ${profile.name} 的项目目录` : `连接 ${profile.name}`} style={{ ...styles.actionTextButton, ...styles.actionTextPrimary }}>{connecting === profile.profileId ? "连接中" : profile.defaultProjectPath ? "进入项目" : "连接"}</button>
-        {connecting === profile.profileId && <button type="button" onClick={() => cancelConnect(profile)} title="取消连接" aria-label={`取消连接 ${profile.name}`} style={styles.iconButton}><ActionIcon kind="disconnect" /></button>}
-        <button type="button" onClick={() => setEditor({ mode: "edit", profile })} title="编辑服务器" aria-label={`编辑 ${profile.name}`} style={styles.iconButton}><ActionIcon kind="edit" /></button>
-        <button type="button" onClick={() => remove(profile)} title="删除服务器" aria-label={`删除 ${profile.name}`} style={{ ...styles.iconButton, ...styles.iconDanger }}><ActionIcon kind="delete" /></button>
+        {profile.connected && <button type="button" onClick={() => disconnectProfile(profile)} title="Disconnect" aria-label={`Disconnect ${profile.name}`} style={styles.actionTextButton}>Disconnect</button>}
+        <button type="button" disabled={connecting === profile.profileId || !profile.credentialConfigured} onClick={() => connect(profile)} title={connecting === profile.profileId ? "Connecting" : profile.defaultProjectPath ? `Open project ${profile.defaultProjectPath}` : "Connect and open terminal"} aria-label={profile.defaultProjectPath ? `Open the project directory of ${profile.name}` : `Connect ${profile.name}`} style={{ ...styles.actionTextButton, ...styles.actionTextPrimary }}>{connecting === profile.profileId ? "Connecting" : profile.defaultProjectPath ? "Open project" : "Connect"}</button>
+        {connecting === profile.profileId && <button type="button" onClick={() => cancelConnect(profile)} title="Disconnect" aria-label={`Disconnect ${profile.name}`} style={styles.iconButton}><ActionIcon kind="disconnect" /></button>}
+        <button type="button" onClick={() => setEditor({ mode: "edit", profile })} title="Edit server" aria-label={`Edit ${profile.name}`} style={styles.iconButton}><ActionIcon kind="edit" /></button>
+        <button type="button" onClick={() => remove(profile)} title="Delete server" aria-label={`Delete ${profile.name}`} style={{ ...styles.iconButton, ...styles.iconDanger }}><ActionIcon kind="delete" /></button>
       </div>
     </div>
   ))}</div>;
@@ -555,59 +555,59 @@ export function SshResources({ api, credentials }) {
     <div style={styles.page}>
       <ResourceFormTheme />
       <div style={styles.pageHeader}>
-        <div><h2 style={styles.heading}>SSH 资源</h2><p style={styles.description}>保存服务器地址和本机 DSH 凭据。密码、私钥和口令不会显示给 Agent 或写入浏览器存储。</p></div>
+        <div><h2 style={styles.heading}>SSH Resources</h2><p style={styles.description}>Stores the server address and the local DSH credentials. Passwords, private keys and passphrases are never shown to the agent or written to browser storage.</p></div>
         <div style={styles.headerActions}>
           <label className="dsh-ssh-ops-agent-toggle" style={styles.agentToggle}>
             <input type="checkbox" checked={agentAutoConnect === true} disabled={agentAutoConnect === null || agentSaving} onChange={toggleAgentAutoConnect} style={styles.agentToggleBox} />
-            <span>AI 自动连接</span>
-            <span role="tooltip" className="dsh-ssh-ops-agent-toggle-tip">开启后，对话中的 AI 可按名称自行连接这里保存的服务器并切换当前连接（ssh_connect_profile）；每次连接都会在右侧面板打开终端，操作者始终可见。关闭时 AI 只能请你手动连接。默认关闭。</span>
+            <span>AI auto-connect</span>
+            <span role="tooltip" className="dsh-ssh-ops-agent-toggle-tip">When enabled, the AI in a conversation may connect to a server saved here by name and switch the active connection (ssh_connect_profile). Every connection opens a terminal in the right-hand panel so the operator can always see it. When disabled, the AI can only ask you to connect. Off by default.</span>
           </label>
-          <button type="button" style={styles.primary} onClick={() => setEditor({ mode: "new" })}>新增服务器</button>
+          <button type="button" style={styles.primary} onClick={() => setEditor({ mode: "new" })}>Add server</button>
         </div>
       </div>
       <div style={styles.setupGrid}>
         <section style={{ ...styles.groupPanel, marginBottom: 0 }}>
-          <div style={styles.groupTitle}>服务器分组</div>
-          <div style={styles.groupCreate}><input value={newGroupName} onChange={(event) => setNewGroupName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") createGroup(); }} placeholder="例如：生产环境" style={{ ...styles.input, flex: 1, minWidth: 0 }} /><button type="button" disabled={creatingGroup || !newGroupName.trim()} onClick={createGroup} style={styles.secondary}>{creatingGroup ? "创建中…" : "创建"}</button></div>
-          {groups.length > 0 && <div style={styles.groupChips}>{groups.map((group) => <span key={group.groupId} style={styles.groupChip}>{group.name}（{group.profileCount}）<button type="button" onClick={() => deleteGroup(group)} title={`删除分组 ${group.name}`} style={styles.chipDelete}>×</button></span>)}</div>}
+          <div style={styles.groupTitle}>Server groups</div>
+          <div style={styles.groupCreate}><input value={newGroupName} onChange={(event) => setNewGroupName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") createGroup(); }} placeholder="e.g. Production" style={{ ...styles.input, flex: 1, minWidth: 0 }} /><button type="button" disabled={creatingGroup || !newGroupName.trim()} onClick={createGroup} style={styles.secondary}>{creatingGroup ? "Creating…" : "Create"}</button></div>
+          {groups.length > 0 && <div style={styles.groupChips}>{groups.map((group) => <span key={group.groupId} style={styles.groupChip}>{group.name}({group.profileCount})<button type="button" onClick={() => deleteGroup(group)} title={`Delete group ${group.name}`} style={styles.chipDelete}>×</button></span>)}</div>}
         </section>
-        <section style={{ ...styles.groupPanel, marginBottom: 0 }}><div style={styles.groupTitle}>共享 SSH 凭据</div><button type="button" onClick={() => setCredentialEditor({})} style={styles.secondary}>新增共享凭据</button>{sharedCredentials.length > 0 && <div style={styles.credentialList}>{sharedCredentials.map((item) => <div key={item.credentialId} style={styles.credentialRow}><span title={item.name} style={styles.credentialLabel}>{item.name} · {item.authKind === "key" ? "私钥" : "密码"} · {item.credentialConfigured ? "已保存" : "未配置"}</span><span style={styles.credentialActions}><button type="button" onClick={() => setCredentialEditor(item)} title={`编辑共享凭据 ${item.name}`} aria-label={`编辑共享凭据 ${item.name}`} style={styles.iconButton}>✎</button><button type="button" onClick={async () => { if (!window.confirm(`删除共享凭据“${item.name}”？仍被服务器或跳板机引用时不会删除。`)) return; try { await api.credentialDelete(item.credentialId); await refresh({ showLoading: false }); } catch (cause) { setError(cause?.message ?? String(cause)); } }} title={`删除共享凭据 ${item.name}`} aria-label={`删除共享凭据 ${item.name}`} style={{ ...styles.iconButton, color: "#f07171" }}>×</button></span></div>)}</div>}</section>
+        <section style={{ ...styles.groupPanel, marginBottom: 0 }}><div style={styles.groupTitle}>Shared SSH credentials</div><button type="button" onClick={() => setCredentialEditor({})} style={styles.secondary}>Add shared credential</button>{sharedCredentials.length > 0 && <div style={styles.credentialList}>{sharedCredentials.map((item) => <div key={item.credentialId} style={styles.credentialRow}><span title={item.name} style={styles.credentialLabel}>{item.name} · {item.authKind === "key" ? "Private key" : "Password"} · {item.credentialConfigured ? "Saved" : "Not configured"}</span><span style={styles.credentialActions}><button type="button" onClick={() => setCredentialEditor(item)} title={`Edit shared credential ${item.name}`} aria-label={`Edit shared credential ${item.name}`} style={styles.iconButton}>✎</button><button type="button" onClick={async () => { if (!window.confirm(`Delete the shared credential “${item.name}”? It will not be deleted while servers or jump hosts still reference it.`)) return; try { await api.credentialDelete(item.credentialId); await refresh({ showLoading: false }); } catch (cause) { setError(cause?.message ?? String(cause)); } }} title={`Delete shared credential ${item.name}`} aria-label={`Delete shared credential ${item.name}`} style={{ ...styles.iconButton, color: "#f07171" }}>×</button></span></div>)}</div>}</section>
       </div>
       {error && <div style={styles.error} role="alert">{error}</div>}
-      {loading ? <div style={styles.empty}>加载 SSH 资源中…</div> : profiles.length === 0 ? <div style={styles.empty}>还没有保存的服务器。新增后可一键连接并打开右侧终端。</div> : <div style={styles.groupedList}>{groups.map((group) => {
+      {loading ? <div style={styles.empty}>Loading SSH resources…</div> : profiles.length === 0 ? <div style={styles.empty}>No saved servers yet. Add one to connect in a single click and open the terminal on the right.</div> : <div style={styles.groupedList}>{groups.map((group) => {
         const key = `group:${group.groupId}`;
         const collapsed = !expandedGroups.has(key);
         const items = groupedProfiles.get(group.groupId) ?? [];
         return <section key={group.groupId}>
           <button type="button" onClick={() => toggleGroup(key)} aria-expanded={!collapsed} style={styles.groupHeadingButton}>
-            <span style={styles.groupHeading}>{collapsed ? "▸" : "▾"} {group.name} <span style={styles.groupCount}>（{items.length}）</span></span>
+            <span style={styles.groupHeading}>{collapsed ? "▸" : "▾"} {group.name} <span style={styles.groupCount}>({items.length})</span></span>
           </button>
-          {!collapsed && (renderProfiles(items) || <div style={styles.groupEmpty}>这个分组还没有服务器。</div>)}
+          {!collapsed && (renderProfiles(items) || <div style={styles.groupEmpty}>This group has no servers yet.</div>)}
         </section>;
       })}{ungrouped.length > 0 && (() => {
         const key = "ungrouped";
         const collapsed = !expandedGroups.has(key);
         return <section>
           <button type="button" onClick={() => toggleGroup(key)} aria-expanded={!collapsed} style={styles.groupHeadingButton}>
-            <span style={styles.groupHeading}>{collapsed ? "▸" : "▾"} 未分组 <span style={styles.groupCount}>（{ungrouped.length}）</span></span>
+            <span style={styles.groupHeading}>{collapsed ? "▸" : "▾"} Ungrouped <span style={styles.groupCount}>({ungrouped.length})</span></span>
           </button>
           {!collapsed && renderProfiles(ungrouped)}
         </section>;
       })()}</div>}
       {unmatchedKnownHosts.length > 0 && (
         <section style={styles.groupPanel}>
-          <div style={styles.groupTitle}>已信任主机（未保存为资源）</div>
+          <div style={styles.groupTitle}>Trusted hosts (not saved as resources)</div>
           <div style={styles.list}>{unmatchedKnownHosts.map((h) => {
             const key = `${h.host}:${h.port}`;
             return (
               <div key={key} style={styles.card}>
                 <div style={styles.cardMain}>
                   <div style={styles.cardTitle}>{h.host}:{h.port}</div>
-                  <div style={styles.meta}>{h.algorithm || "ssh-host-key"} · 首次信任 {new Date(h.firstSeenAt).toLocaleString()}</div>
+                  <div style={styles.meta}>{h.algorithm || "ssh-host-key"} · Trusted on first use {new Date(h.firstSeenAt).toLocaleString()}</div>
                 </div>
                 <div style={styles.cardActions}>
-                  <button type="button" onClick={() => setEditor({ mode: "new", profile: { profileId: undefined, name: h.host, host: h.host, port: h.port, username: "root", authKind: "password", hostKeyMode: "accept-new" } })} title="把该服务器保存为 SSH 资源（可改用户名与认证方式）" style={styles.secondary}>保存为资源</button>
-                  <button type="button" onClick={() => setHostKeyPopup(h)} title="查看/复制/忘记主机指纹" aria-label={`查看 ${h.host}:${h.port} 的主机指纹`} style={styles.iconButton}><ShieldIcon trusted /></button>
+                  <button type="button" onClick={() => setEditor({ mode: "new", profile: { profileId: undefined, name: h.host, host: h.host, port: h.port, username: "root", authKind: "password", hostKeyMode: "accept-new" } })} title="Save this server as an SSH resource (username and authentication can be changed)" style={styles.secondary}>Save as resource</button>
+                  <button type="button" onClick={() => setHostKeyPopup(h)} title="View / copy / forget host key" aria-label={`View the host key for ${h.host}:${h.port}`} style={styles.iconButton}><ShieldIcon trusted /></button>
                 </div>
               </div>
             );
